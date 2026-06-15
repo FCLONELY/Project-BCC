@@ -57,7 +57,7 @@ export default function Game() {
           color: '#FFD700',
           textShadow: '2px 2px 0 rgba(0,0,0,0.5), 0 0 8px rgba(255,215,0,0.4)',
           whiteSpace: 'nowrap',
-        }}>🌿 田园大世界</div>
+        }}>🌟 NEXISLE: BCC</div>
 
         {/* 分隔 */}
         <div style={{

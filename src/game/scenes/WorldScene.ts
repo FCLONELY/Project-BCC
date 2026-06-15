@@ -234,7 +234,7 @@ export default class WorldScene extends Phaser.Scene {
       }
     }
 
-    const townLabel = this.add.text(villageStartX + 120, villageStartY - 180, '🏡 星光小镇', {
+    const townLabel = this.add.text(villageStartX + 120, villageStartY - 180, '🏡 NEXISLE Village', {
       fontFamily: '"Press Start 2P"',
       fontSize: '14px',
       color: '#FFD700',
@@ -334,10 +334,11 @@ export default class WorldScene extends Phaser.Scene {
     });
 
     // ==== 农场 ====
-    const farmStartX = -200;
+    // 农场位于村庄西侧，包含整齐的田垄、水井和工具
+    const farmStartX = -380;
     const farmStartY = 100;
 
-    const farmLabel = this.add.text(farmStartX, farmStartY - 120, '🌾 新手农场', {
+    const farmLabel = this.add.text(farmStartX, farmStartY - 180, '🌾 NEXISLE 农场', {
       fontFamily: '"Press Start 2P"',
       fontSize: '14px',
       color: '#90EE90',
@@ -356,41 +357,96 @@ export default class WorldScene extends Phaser.Scene {
       yoyo: true,
     });
 
+    // 4 行 x 5 列的整齐田垄布局
     const cropTypes = ['crop-seed', 'crop-sprout', 'crop-growing', 'crop-mature'];
+    const plotSize = 48;
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 4; j++) {
-        const cx = farmStartX + (i - 2) * 56;
-        const cy = farmStartY + (j - 2) * 56;
+        const cx = farmStartX + (i - 2) * plotSize;
+        const cy = farmStartY + (j - 2) * plotSize;
 
         const bg = this.add.graphics();
-        bg.fillStyle(0x8B7355).fillRect(cx - 24, cy - 44, 48, 44);
-        bg.fillStyle(0x6B5344).fillRect(cx - 24, cy - 44, 48, 4).fillRect(cx - 24, cy - 4, 48, 4);
-        bg.fillStyle(0xA08550).fillRect(cx - 22, cy - 42, 4, 36).fillRect(cx + 18, cy - 42, 4, 36);
+        bg.fillStyle(0x8B7355).fillRect(cx - 22, cy - 40, 44, 40);
+        bg.fillStyle(0x6B5344).fillRect(cx - 22, cy - 40, 44, 3).fillRect(cx - 22, cy - 4, 44, 3);
+        bg.fillStyle(0xA08550).fillRect(cx - 20, cy - 38, 2, 34).fillRect(cx + 18, cy - 38, 2, 34);
         bg.setDepth(Math.floor(cy) - 2);
 
         const stage = (i + j) % 4;
         const crop = this.add.sprite(cx, cy, cropTypes[stage]);
         crop.setOrigin(0.5, 1);
-        crop.setScale(1.2);
+        crop.setScale(1.1);
         crop.setDepth(Math.floor(cy));
       }
     }
 
-    // 农场栅栏
+    // 农场东侧的水井（灌溉水源）
+    const farmWell = this.add.sprite(farmStartX + 160, farmStartY - 100, 'well');
+    farmWell.setOrigin(0.5, 1);
+    farmWell.setScale(1.3);
+    farmWell.setDepth(Math.floor(farmStartY - 100));
+
+    // 工具棚（小木屋）
+    const toolShed = this.add.sprite(farmStartX - 160, farmStartY - 100, 'cottage');
+    toolShed.setOrigin(0.5, 1);
+    toolShed.setScale(1.2);
+    toolShed.setDepth(Math.floor(farmStartY - 100));
+
+    // 农场周围的栅栏
+    const fencePositions: {x: number, y: number}[] = [];
     for (let i = -3; i <= 3; i++) {
-      const fx = farmStartX + i * 32;
-      const fy = farmStartY - 180;
-      const fence = this.add.sprite(fx, fy, 'fence');
+      fencePositions.push({ x: farmStartX + i * 40, y: farmStartY - 150 });
+      fencePositions.push({ x: farmStartX + i * 40, y: farmStartY + 150 });
+    }
+    fencePositions.push({ x: farmStartX - 160, y: farmStartY - 110 });
+    fencePositions.push({ x: farmStartX + 160, y: farmStartY - 110 });
+    fencePositions.push({ x: farmStartX - 160, y: farmStartY + 110 });
+    fencePositions.push({ x: farmStartX + 160, y: farmStartY + 110 });
+    fencePositions.forEach((pos) => {
+      const fence = this.add.sprite(pos.x, pos.y, 'fence');
       fence.setOrigin(0.5, 1);
       fence.setScale(1);
-      fence.setDepth(Math.floor(fy));
-    }
+      fence.setDepth(Math.floor(pos.y));
+    });
 
-    // 宝箱
-    const chest = this.add.sprite(farmStartX + 100, farmStartY + 50, 'chest');
+    // 农场 NPC - 农夫
+    const farmerShadow = this.add.ellipse(farmStartX + 100, farmStartY + 48, 28, 8, 0x000000, 0.25);
+    farmerShadow.setDepth(Math.floor(farmStartY + 48) - 1);
+    const farmer = this.add.sprite(farmStartX + 100, farmStartY + 40, 'npc-oldman');
+    farmer.setOrigin(0.5, 1);
+    farmer.setScale(1.15);
+    farmer.setDepth(Math.floor(farmStartY + 40));
+    const farmerLabel = this.add.text(farmStartX + 100, farmStartY - 5, '老农夫', {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '10px',
+      color: '#90EE90',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    farmerLabel.setOrigin(0.5);
+    farmerLabel.setDepth(Math.floor(farmStartY + 40) + 50);
+    const farmerBubble = this.add.text(farmStartX + 100, farmStartY - 35, '"来种蔬菜吧！"', {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '9px',
+      color: '#FFFFFF',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    farmerBubble.setOrigin(0.5);
+    farmerBubble.setDepth(Math.floor(farmStartY + 40) + 50);
+
+    // 宝箱（农具储藏）
+    const chestShadow = this.add.ellipse(farmStartX - 100, farmStartY + 48, 24, 6, 0x000000, 0.25);
+    chestShadow.setDepth(Math.floor(farmStartY + 48) - 1);
+    const chest = this.add.sprite(farmStartX - 100, farmStartY + 40, 'chest');
     chest.setOrigin(0.5, 1);
     chest.setScale(1.3);
-    chest.setDepth(Math.floor(farmStartY + 50));
+    chest.setDepth(Math.floor(farmStartY + 40));
+
+    // 农场装饰：散落的工具
+    const hoe = this.add.sprite(farmStartX + 60, farmStartY + 130, 'hoe');
+    hoe.setOrigin(0.5, 1);
+    hoe.setScale(1.1);
+    hoe.setDepth(Math.floor(farmStartY + 130));
 
     // ==== 散落金币 ====
     for (let i = 0; i < 10; i++) {
@@ -424,7 +480,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     // ==== 起点提示 ====
-    const welcome = this.add.text(0, -120, '🌟 探索你的田园世界！', {
+    const welcome = this.add.text(0, -120, '🌟 NEXISLE: BCC - 探索你的世界！', {
       fontFamily: '"Press Start 2P"',
       fontSize: '14px',
       color: '#FFD700',
@@ -539,9 +595,8 @@ export default class WorldScene extends Phaser.Scene {
         this.animationFrame = (this.animationFrame + 1) % 4;
         this.player.setTexture(`${this.characterKey}-walk${this.animationFrame + 1}`);
 
+        // 只有向左移动时翻转精灵；其他方向保持正常
         if (this.currentDirection === 'left') {
-          this.player.setFlipX(true);
-        } else if (this.currentDirection === 'right') {
           this.player.setFlipX(true);
         } else {
           this.player.setFlipX(false);

@@ -24,7 +24,7 @@ export default class BootScene extends Phaser.Scene {
     bg.fillStyle(0x1a0f4e, 1);
     bg.fillRect(0, 0, width, height);
 
-    const title = this.add.text(width / 2, height / 2 - 100, '田园大世界', {
+    const title = this.add.text(width / 2, height / 2 - 100, 'NEXISLE: BCC', {
       fontFamily: '"Press Start 2P"',
       fontSize: '28px',
       color: '#FFD700',
@@ -63,7 +63,7 @@ export default class BootScene extends Phaser.Scene {
       loop: true,
     });
 
-    const tip = this.add.text(width / 2, height / 2 + 70, '正在加载游戏资源...', {
+    const tip = this.add.text(width / 2, height / 2 + 70, 'Loading game resources...', {
       fontFamily: '"Press Start 2P"',
       fontSize: '12px',
       color: '#FFD700',
@@ -106,20 +106,21 @@ export default class BootScene extends Phaser.Scene {
     water.destroy();
 
     // ==== 角色纹理 ====
-    // 女孩 - 向下
-    this.generateCharSprite('girl', 'down', 0xFFB6C1, 0xFF69B4);
-    // 女孩 - 向上
-    this.generateCharSprite('girl', 'up', 0xFFB6C1, 0xFF69B4);
-    // 女孩 - 左/右 用走路帧
+    // 女孩 - 4 方向站立 + 走路帧
+    this.generateCharStanding('girl', 'down', 0xFFB6C1, 0xFF69B4);
+    this.generateCharStanding('girl', 'up', 0xFFB6C1, 0xFF69B4);
+    this.generateCharStanding('girl', 'left', 0xFFB6C1, 0xFF69B4);
+    this.generateCharStanding('girl', 'right', 0xFFB6C1, 0xFF69B4);
     this.generateCharWalk('girl', 0xFFB6C1, 0xFF69B4);
 
-    // 男孩 - 向下
-    this.generateCharSprite('boy', 'down', 0x6BA3D6, 0x4A6FA5);
-    // 男孩 - 向上
-    this.generateCharSprite('boy', 'up', 0x6BA3D6, 0x4A6FA5);
-    // 男孩 - 走路
+    // 男孩 - 4 方向站立 + 走路帧
+    this.generateCharStanding('boy', 'down', 0x6BA3D6, 0x4A6FA5);
+    this.generateCharStanding('boy', 'up', 0x6BA3D6, 0x4A6FA5);
+    this.generateCharStanding('boy', 'left', 0x6BA3D6, 0x4A6FA5);
+    this.generateCharStanding('boy', 'right', 0x6BA3D6, 0x4A6FA5);
     this.generateCharWalk('boy', 0x6BA3D6, 0x4A6FA5);
 
+    // ==== 世界物体 ====
     // 树 - 大
     const tree = this.add.graphics();
     tree.fillStyle(0x000000, 0.2).fillEllipse(32, 70, 46, 10);
@@ -181,6 +182,24 @@ export default class BootScene extends Phaser.Scene {
     flowerPurple.generateTexture('flower-purple', 24, 24);
     flowerPurple.destroy();
 
+    // 花 - 红
+    const flowerRed = this.add.graphics();
+    flowerRed.fillStyle(0x228B22).fillRect(10, 14, 4, 10);
+    flowerRed.fillStyle(0xDC143C).fillRect(6, 4, 12, 12);
+    flowerRed.fillStyle(0xFF6B6B).fillRect(8, 6, 8, 8);
+    flowerRed.fillStyle(0xFFFF99).fillRect(10, 8, 4, 4);
+    flowerRed.generateTexture('flower-red', 24, 24);
+    flowerRed.destroy();
+
+    // 花 - 蓝
+    const flowerBlue = this.add.graphics();
+    flowerBlue.fillStyle(0x228B22).fillRect(10, 14, 4, 10);
+    flowerBlue.fillStyle(0x4169E1).fillRect(6, 4, 12, 12);
+    flowerBlue.fillStyle(0x87CEEB).fillRect(8, 6, 8, 8);
+    flowerBlue.fillStyle(0xFFFFFF).fillRect(10, 8, 4, 4);
+    flowerBlue.generateTexture('flower-blue', 24, 24);
+    flowerBlue.destroy();
+
     // 蘑菇
     const mushroom = this.add.graphics();
     mushroom.fillStyle(0xF5DEB3).fillRect(8, 12, 8, 10);
@@ -190,13 +209,11 @@ export default class BootScene extends Phaser.Scene {
     mushroom.generateTexture('mushroom', 24, 24);
     mushroom.destroy();
 
-    // 房屋
+    // 房屋 - 大
     const house = this.add.graphics();
     house.fillStyle(0x000000, 0.25).fillEllipse(40, 78, 70, 12);
-    // 屋顶
     house.fillStyle(0xC1444E).fillRect(8, 24, 64, 12);
     house.fillStyle(0x8B2500).fillRect(8, 34, 64, 2);
-    // 屋顶三角
     for (let i = 0; i < 18; i++) {
       house.fillStyle(0x8B2500).fillRect(40 - i, 8 + i, 2 + i * 2, 2);
     }
@@ -210,6 +227,24 @@ export default class BootScene extends Phaser.Scene {
     house.fillStyle(0xFFD700).fillRect(42, 58, 2, 2);
     house.generateTexture('house-big', 80, 80);
     house.destroy();
+
+    // 小木屋 (cottage)
+    const cottage = this.add.graphics();
+    cottage.fillStyle(0x000000, 0.25).fillEllipse(32, 66, 56, 10);
+    cottage.fillStyle(0x8B4513).fillRect(4, 20, 56, 10);
+    cottage.fillStyle(0x5C3317).fillRect(4, 28, 56, 2);
+    for (let i = 0; i < 14; i++) {
+      cottage.fillStyle(0x5C3317).fillRect(32 - i, 6 + i, 2 + i * 2, 2);
+    }
+    cottage.fillStyle(0xD2B48C).fillRect(6, 30, 52, 32);
+    cottage.fillStyle(0x5C3317).fillRect(26, 38, 12, 24);
+    cottage.fillStyle(0x8B4513).fillRect(28, 40, 8, 20);
+    cottage.fillStyle(0x4682B4).fillRect(10, 34, 10, 10);
+    cottage.fillStyle(0x87CEEB).fillRect(11, 35, 8, 8);
+    cottage.fillStyle(0x4682B4).fillRect(44, 34, 10, 10);
+    cottage.fillStyle(0x87CEEB).fillRect(45, 35, 8, 8);
+    cottage.generateTexture('cottage', 64, 68);
+    cottage.destroy();
 
     // NPC - 老人
     const npcOld = this.add.graphics();
@@ -327,91 +362,182 @@ export default class BootScene extends Phaser.Scene {
     chest.fillStyle(0x000000).fillRect(17, 20, 2, 3);
     chest.generateTexture('chest', 36, 36);
     chest.destroy();
+
+    // 锄头 (农场工具装饰)
+    const hoe = this.add.graphics();
+    hoe.fillStyle(0x8B4513).fillRect(14, 8, 4, 22);
+    hoe.fillStyle(0xA0522D).fillRect(14, 8, 4, 2);
+    hoe.fillStyle(0x808080).fillRect(6, 28, 20, 4);
+    hoe.fillStyle(0x5a5a5a).fillRect(6, 30, 20, 2);
+    hoe.generateTexture('hoe', 32, 36);
+    hoe.destroy();
   }
 
-  // 生成角色站立图像
-  generateCharSprite(charType: string, direction: string, colorA: number, colorB: number) {
+  // 生成角色站立图像 - 为每个方向绘制独特图像
+  generateCharStanding(charType: string, direction: string, colorA: number, colorB: number) {
     const g = this.add.graphics();
-    g.fillStyle(0xFFE4C4).fillRect(22, 8, 20, 18); // 头
-    // 头发
-    g.fillStyle(colorA).fillRect(20, 4, 24, 10);
-    g.fillStyle(colorB).fillRect(20, 10, 24, 4);
-    // 脸颊高光
-    g.fillStyle(colorA).fillRect(18, 14, 4, 6).fillRect(42, 14, 4, 6);
+    const skin = 0xFFE4C4;
+    const hairColor = charType === 'boy' ? 0x2E4A6B : colorB;
+    const hairShadow = charType === 'boy' ? 0x1a2a3e : 0xE65A8E;
+    const pantColor = charType === 'boy' ? 0x3d5a80 : 0x4A4A4A;
+    const shoeColor = charType === 'boy' ? 0x2C3E50 : 0x8B2500;
 
-    // 眼睛/表情
     if (direction === 'down') {
+      // === 面向下方（正面） ===
+      // 头发
+      g.fillStyle(hairColor).fillRect(18, 6, 28, 14);
+      g.fillStyle(hairShadow).fillRect(18, 18, 28, 4);
+      // 脸
+      g.fillStyle(skin).fillRect(22, 12, 20, 16);
+      // 脸颊粉色
+      g.fillStyle(0xFFC0CB).fillRect(23, 20, 3, 2).fillRect(38, 20, 3, 2);
+      // 眼睛
       g.fillStyle(0x000000).fillRect(26, 18, 3, 3).fillRect(35, 18, 3, 3);
       g.fillStyle(0xFFFFFF).fillRect(27, 18, 1, 1).fillRect(36, 18, 1, 1);
-      g.fillStyle(colorA).fillRect(23, 22, 3, 2).fillRect(38, 22, 3, 2);
-      g.fillStyle(0x8B4513).fillRect(30, 24, 4, 1);
+      // 嘴
+      g.fillStyle(0x8B4513).fillRect(30, 24, 4, 2);
     } else if (direction === 'up') {
-      g.fillStyle(colorB).fillRect(22, 10, 20, 6);
-    } else {
-      g.fillStyle(0x000000).fillRect(26, 18, 3, 3);
-      g.fillStyle(0xFFFFFF).fillRect(27, 18, 1, 1);
+      // === 面向上方（背面） ===
+      // 头发
+      g.fillStyle(hairColor).fillRect(18, 6, 28, 16);
+      g.fillStyle(hairShadow).fillRect(18, 20, 28, 4);
+      // 头
+      g.fillStyle(skin).fillRect(22, 10, 20, 12);
+    } else if (direction === 'right') {
+      // === 面向右方（右侧面） ===
+      // 头发（从前面看偏左）
+      g.fillStyle(hairColor).fillRect(16, 6, 28, 14);
+      g.fillStyle(hairShadow).fillRect(16, 18, 28, 4);
+      // 头 - 稍微偏右
+      g.fillStyle(skin).fillRect(22, 12, 22, 16);
+      // 脸颊
+      g.fillStyle(0xFFC0CB).fillRect(38, 20, 3, 2);
+      // 眼睛（在右侧）
+      g.fillStyle(0x000000).fillRect(37, 18, 3, 3);
+      g.fillStyle(0xFFFFFF).fillRect(38, 18, 1, 1);
+      // 小鼻子
+      g.fillStyle(0xD4A574).fillRect(42, 22, 2, 2);
+      // 嘴
+      g.fillStyle(0x8B4513).fillRect(38, 24, 3, 2);
+    } else if (direction === 'left') {
+      // === 面向左方（左侧面） ===
+      // 头发
+      g.fillStyle(hairColor).fillRect(20, 6, 28, 14);
+      g.fillStyle(hairShadow).fillRect(20, 18, 28, 4);
+      // 头
+      g.fillStyle(skin).fillRect(20, 12, 22, 16);
+      // 脸颊
+      g.fillStyle(0xFFC0CB).fillRect(23, 20, 3, 2);
+      // 眼睛（在左侧）
+      g.fillStyle(0x000000).fillRect(24, 18, 3, 3);
+      g.fillStyle(0xFFFFFF).fillRect(25, 18, 1, 1);
+      // 小鼻子
+      g.fillStyle(0xD4A574).fillRect(20, 22, 2, 2);
+      // 嘴
+      g.fillStyle(0x8B4513).fillRect(23, 24, 3, 2);
     }
 
-    // 身体
-    g.fillStyle(colorB).fillRect(22, 26, 20, 4); // 脖子
-    g.fillStyle(colorA).fillRect(18, 30, 28, 22); // 衣服主体
-    g.fillStyle(colorB).fillRect(18, 48, 28, 4);  // 衣服下边
-    g.fillStyle(0xFFFFFF).fillRect(28, 36, 8, 6); // 衣服图案
-    g.fillStyle(colorB).fillRect(28, 38, 8, 2);
+    // === 脖子 ===
+    g.fillStyle(colorB).fillRect(26, 28, 12, 4);
 
-    // 手臂
-    g.fillStyle(0xFFE4C4).fillRect(14, 32, 6, 14).fillRect(44, 32, 6, 14);
-    g.fillStyle(colorA).fillRect(14, 32, 6, 4).fillRect(44, 32, 6, 4);
+    // === 身体（衣服） ===
+    // 衣服主体
+    g.fillStyle(colorA).fillRect(18, 32, 28, 20);
+    // 衣服下边阴影
+    g.fillStyle(colorB).fillRect(18, 50, 28, 4);
+    // 领口
+    g.fillStyle(colorB).fillRect(26, 32, 12, 4);
+    // 衣服图案（小女孩的心形/菱形，小男孩的徽章）
+    if (charType === 'girl') {
+      // 粉色蝴蝶结图案
+      g.fillStyle(0xFFFFFF).fillRect(28, 38, 8, 6);
+      g.fillStyle(colorB).fillRect(28, 40, 8, 2);
+      g.fillStyle(colorB).fillRect(30, 38, 4, 6);
+    } else {
+      // 男孩的口袋
+      g.fillStyle(colorB).fillRect(28, 40, 8, 8);
+      g.fillStyle(colorA).fillRect(30, 42, 4, 4);
+    }
 
-    // 腿
-    g.fillStyle(0x4A4A4A).fillRect(22, 52, 8, 10).fillRect(34, 52, 8, 10);
+    // === 手臂 ===
+    g.fillStyle(skin).fillRect(14, 34, 6, 16).fillRect(44, 34, 6, 16);
+    g.fillStyle(colorA).fillRect(14, 34, 6, 4).fillRect(44, 34, 6, 4);
+    // 袖口
+    g.fillStyle(colorB).fillRect(14, 48, 6, 2).fillRect(44, 48, 6, 2);
+
+    // === 腿 ===
+    g.fillStyle(pantColor).fillRect(22, 54, 8, 12).fillRect(34, 54, 8, 12);
+    g.fillStyle(colorB).fillRect(22, 54, 8, 2).fillRect(34, 54, 8, 2);
     // 鞋
-    g.fillStyle(colorB).fillRect(20, 60, 12, 4).fillRect(32, 60, 12, 4);
+    g.fillStyle(shoeColor).fillRect(20, 64, 12, 4).fillRect(32, 64, 12, 4);
+    g.fillStyle(0x000000).fillRect(20, 66, 12, 2).fillRect(32, 66, 12, 2);
 
-    // 阴影
-    const shadow = this.add.graphics();
-    shadow.fillStyle(0x000000, 0.35).fillEllipse(32, 66, 28, 6);
-
-    // 合并
+    // 生成纹理
     const textureKey = `${charType}-${direction}`;
-    const container = this.add.container(0, 0);
-    container.add([shadow, g]);
     g.generateTexture(textureKey, 64, 72);
     g.destroy();
-    shadow.destroy();
-    container.destroy();
   }
 
   // 生成走路动画帧
   generateCharWalk(charType: string, colorA: number, colorB: number) {
     const frames = [
-      { leg1Offset: 0, leg2Offset: 0, armOffset: 0 },
-      { leg1Offset: 2, leg2Offset: -1, armOffset: -1 },
-      { leg1Offset: 0, leg2Offset: 0, armOffset: 0 },
-      { leg1Offset: -1, leg2Offset: 2, armOffset: 1 },
+      { leg1Y: 54, leg2Y: 54, arm1Y: 34, arm2Y: 34 },
+      { leg1Y: 52, leg2Y: 56, arm1Y: 32, arm2Y: 36 },
+      { leg1Y: 54, leg2Y: 54, arm1Y: 34, arm2Y: 34 },
+      { leg1Y: 56, leg2Y: 52, arm1Y: 36, arm2Y: 32 },
     ];
+    const skin = 0xFFE4C4;
+    const hairColor = charType === 'boy' ? 0x2E4A6B : colorB;
+    const hairShadow = charType === 'boy' ? 0x1a2a3e : 0xE65A8E;
+    const pantColor = charType === 'boy' ? 0x3d5a80 : 0x4A4A4A;
+    const shoeColor = charType === 'boy' ? 0x2C3E50 : 0x8B2500;
 
     for (let f = 0; f < frames.length; f++) {
       const g = this.add.graphics();
-      g.fillStyle(0xFFE4C4).fillRect(22, 8, 20, 18);
-      g.fillStyle(colorA).fillRect(20, 4, 24, 10);
-      g.fillStyle(colorB).fillRect(20, 10, 24, 4);
-      g.fillStyle(colorA).fillRect(18, 14, 4, 6).fillRect(42, 14, 4, 6);
+      // 头发
+      g.fillStyle(hairColor).fillRect(18, 6, 28, 14);
+      g.fillStyle(hairShadow).fillRect(18, 18, 28, 4);
+      // 头
+      g.fillStyle(skin).fillRect(22, 12, 20, 16);
       // 眼睛
       g.fillStyle(0x000000).fillRect(26, 18, 3, 3).fillRect(35, 18, 3, 3);
       g.fillStyle(0xFFFFFF).fillRect(27, 18, 1, 1).fillRect(36, 18, 1, 1);
+      // 脸颊
+      g.fillStyle(0xFFC0CB).fillRect(23, 22, 3, 2).fillRect(38, 22, 3, 2);
+      // 嘴
+      g.fillStyle(0x8B4513).fillRect(30, 24, 4, 2);
+
+      // 脖子
+      g.fillStyle(colorB).fillRect(26, 28, 12, 4);
+
       // 身体
-      g.fillStyle(colorB).fillRect(22, 26, 20, 4);
-      g.fillStyle(colorA).fillRect(18, 30, 28, 22);
-      g.fillStyle(colorB).fillRect(18, 48, 28, 4);
-      g.fillStyle(0xFFFFFF).fillRect(28, 36, 8, 6);
-      g.fillStyle(colorB).fillRect(28, 38, 8, 2);
-      // 手臂
-      g.fillStyle(0xFFE4C4).fillRect(14, 32 + frames[f].armOffset, 6, 14).fillRect(44, 32 - frames[f].armOffset, 6, 14);
-      g.fillStyle(colorA).fillRect(14, 32 + frames[f].armOffset, 6, 4).fillRect(44, 32 - frames[f].armOffset, 6, 4);
-      // 腿
-      g.fillStyle(0x4A4A4A).fillRect(22, 52 + frames[f].leg1Offset, 8, 10 - Math.abs(frames[f].leg1Offset)).fillRect(34, 52 + frames[f].leg2Offset, 8, 10 - Math.abs(frames[f].leg2Offset));
-      g.fillStyle(colorB).fillRect(20, 60, 12, 4).fillRect(32, 60, 12, 4);
+      g.fillStyle(colorA).fillRect(18, 32, 28, 20);
+      g.fillStyle(colorB).fillRect(18, 50, 28, 4);
+      g.fillStyle(colorB).fillRect(26, 32, 12, 4);
+      // 图案
+      if (charType === 'girl') {
+        g.fillStyle(0xFFFFFF).fillRect(28, 38, 8, 6);
+        g.fillStyle(colorB).fillRect(28, 40, 8, 2);
+      } else {
+        g.fillStyle(colorB).fillRect(28, 40, 8, 8);
+      }
+
+      // 手臂（上下摆动）
+      g.fillStyle(skin).fillRect(14, frames[f].arm1Y, 6, 16);
+      g.fillStyle(skin).fillRect(44, frames[f].arm2Y, 6, 16);
+      g.fillStyle(colorA).fillRect(14, frames[f].arm1Y, 6, 4);
+      g.fillStyle(colorA).fillRect(44, frames[f].arm2Y, 6, 4);
+      g.fillStyle(colorB).fillRect(14, frames[f].arm1Y + 14, 6, 2);
+      g.fillStyle(colorB).fillRect(44, frames[f].arm2Y + 14, 6, 2);
+
+      // 腿（交替移动）
+      g.fillStyle(pantColor).fillRect(22, frames[f].leg1Y, 8, 12);
+      g.fillStyle(pantColor).fillRect(34, frames[f].leg2Y, 8, 12);
+      g.fillStyle(colorB).fillRect(22, frames[f].leg1Y, 8, 2);
+      g.fillStyle(colorB).fillRect(34, frames[f].leg2Y, 8, 2);
+      // 鞋
+      g.fillStyle(shoeColor).fillRect(20, frames[f].leg1Y + 10, 12, 4);
+      g.fillStyle(shoeColor).fillRect(32, frames[f].leg2Y + 10, 12, 4);
 
       const textureKey = `${charType}-walk${f + 1}`;
       g.generateTexture(textureKey, 64, 72);
