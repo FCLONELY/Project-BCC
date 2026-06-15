@@ -9,55 +9,38 @@ export default class WorldScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key };
   private noise2D!: ReturnType<typeof createNoise2D>;
-  private entities: Phaser.GameObjects.GameObject[] = [];
   private playerSpeed: number = 220;
   private isMoving: boolean = false;
   private currentDirection: string = 'down';
   private animationTimer: number = 0;
   private animationFrame: number = 0;
-  private cameraZoom: number = 1.4;
-  private characterId: number = 1; // 1,2,3
-
-  // 粒子系统（使用简单的漂浮 sprite）
-  private dialogueActive: boolean = false;
+  private characterKey: string = 'girl'; // 'girl' | 'boy'
 
   constructor() {
     super({ key: 'WorldScene' });
   }
 
-  preload() {}
-
   create() {
-    // 初始化噪声生成器
     this.noise2D = createNoise2D(() => 42);
 
-    // 摄像机
     this.cameras.main.setBackgroundColor('#87CEEB');
-    this.cameras.main.setZoom(this.cameraZoom);
-    this.cameras.main.fadeIn(1200, 0, 0, 0);
+    this.cameras.main.setZoom(1.4);
+    this.cameras.main.fadeIn(1000, 0, 0, 0);
 
-    // 从 state 读取角色
-    const gameStore = (window as any).__gameStore;
-    if (gameStore && gameStore.characterId) {
-      this.characterId = gameStore.characterId;
+    // 从全局状态读取角色选择
+    const savedChar = (window as any).__gameStore?.characterId;
+    if (savedChar === 2) {
+      this.characterKey = 'boy';
+    } else {
+      this.characterKey = 'girl';
     }
 
-    // 创建世界地面
     this.createWorldGround();
-
-    // 创建玩家
     this.createPlayer();
-
-    // 创建世界实体
     this.createWorldEntities();
-
-    // 创建粒子系统
-    this.createParticleSystems();
-
-    // 摄像机跟随玩家（平滑）
+    this.createParticleEffects();
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
 
-    // 键盘输入
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = {
       W: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -65,20 +48,10 @@ export default class WorldScene extends Phaser.Scene {
       S: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
       D: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
-
-    // 教程文字
-    this.showTutorialText();
-
-    // 定时显示对话气泡
-    this.time.addEvent({
-      delay: 8000,
-      callback: () => this.showRandomDialogue(),
-      loop: true,
-    });
   }
 
   createWorldGround() {
-    const size = 80; // tile 数量
+    const size = 80;
     const tileSize = 32;
     const halfW = (size * tileSize) / 2;
 
@@ -89,22 +62,13 @@ export default class WorldScene extends Phaser.Scene {
         const wx = tx - size / 2;
         const wy = ty - size / 2;
         const elevation = this.noise2D(wx * 0.06, wy * 0.06);
-        const feature = this.noise2D(wx * 0.15 + 100, wy * 0.15 + 100);
         const x = -halfW + tx * tileSize;
         const y = -halfW + ty * tileSize;
 
-        // 中心村庄小路区域
-        const distFromCenter = Math.sqrt(wx * wx + wy * wy);
-
         if (elevation < -0.2) {
-          // 水域
           ground.fillStyle(0x4682B4).fillRect(x, y, tileSize, tileSize);
-          ground.fillStyle(0x5B9BD5).fillRect(x, y, tileSize, 6);
-          if ((tx + ty) % 3 === 0) {
-            ground.fillStyle(0x87CEEB).fillRect(x + 6, y + 10, 10, 2);
-          }
+          ground.fillStyle(0x87CEEB).fillRect(x + 4, y + 10, 10, 2);
         } else if (elevation < -0.05) {
-          // 沙滩
           ground.fillStyle(0xE8D498).fillRect(x, y, tileSize, tileSize);
           if ((tx * 7 + ty * 3) % 5 === 0) {
             ground.fillStyle(0xD4C088).fillRect(x + 4, y + 6, 3, 2);
@@ -113,67 +77,46 @@ export default class WorldScene extends Phaser.Scene {
           // 草地
           ground.fillStyle(0x7EC850).fillRect(x, y, tileSize, tileSize);
           const hash = (tx * 131 + ty * 53 + Math.floor(elevation * 100)) % 20;
-          if (hash === 0) {
-            ground.fillStyle(0x8FD14F).fillRect(x + 4, y + 4, 4, 4);
-          } else if (hash === 1) {
-            ground.fillStyle(0x6BB045).fillRect(x + 20, y + 8, 3, 3);
-          } else if (hash === 2) {
-            ground.fillStyle(0x9AD956).fillRect(x + 8, y + 20, 4, 2);
-          } else if (hash === 3) {
-            ground.fillStyle(0xA08550).fillRect(x + 20, y + 22, 5, 4);
-            ground.fillStyle(0xC4A46B).fillRect(x + 21, y + 22, 3, 2);
-          } else if (hash === 4) {
-            ground.fillStyle(0xFFB6C1).fillRect(x + 12, y + 14, 2, 2);
-          } else if (hash === 5) {
-            ground.fillStyle(0xFFFF99).fillRect(x + 10, y + 6, 2, 2);
-          } else if (hash === 6) {
-            ground.fillStyle(0x87CEEB).fillRect(x + 18, y + 18, 2, 2);
-          }
+          if (hash === 0) ground.fillStyle(0x8FD14F).fillRect(x + 4, y + 4, 3, 3);
+          else if (hash === 1) ground.fillStyle(0x6BB045).fillRect(x + 20, y + 8, 3, 3);
+          else if (hash === 2) ground.fillStyle(0x9AD956).fillRect(x + 8, y + 20, 4, 2);
+          else if (hash === 4) ground.fillStyle(0xFFFF99).fillRect(x + 10, y + 6, 2, 2);
         }
       }
     }
-    ground.setDepth(-100);
 
-    // 在村庄中心区域添加小路
+    // 中心村庄小路
     const pathGfx = this.add.graphics();
     for (let py = -4; py <= 4; py++) {
       for (let px = -6; px <= 6; px++) {
-        // 弯曲的小路
-        const dist = Math.abs(py) + Math.abs(px * 0.6);
-        if (dist < 5) {
+        if (Math.abs(py) + Math.abs(px * 0.5) < 5) {
           const x = px * tileSize;
           const y = py * tileSize;
           pathGfx.fillStyle(0xA9A9A9).fillRect(x, y, tileSize, tileSize);
-          pathGfx.fillStyle(0x8B8682).fillRect(x, y + tileSize - 3, tileSize, 3);
+          pathGfx.fillStyle(0x8B8682).fillRect(x, y + tileSize - 4, tileSize, 4);
           if ((Math.abs(px) + Math.abs(py)) % 3 === 0) {
             pathGfx.fillStyle(0xC0C0C0).fillRect(x + 6, y + 8, 8, 6);
           }
         }
       }
     }
-    pathGfx.setDepth(-99);
   }
 
   createPlayer() {
-    const heroKey = `hero${this.characterId}`;
-    const startTexture = `${heroKey}-down`;
-
-    this.player = this.add.sprite(0, 0, startTexture);
+    this.player = this.add.sprite(0, 0, `${this.characterKey}-down`);
     this.player.setOrigin(0.5, 0.95);
-    this.player.setScale(1.4); // 大玩家
+    this.player.setScale(1.4);
     this.player.setDepth(500);
 
-    // 玩家阴影
     this.playerShadow = this.add.ellipse(0, 30, 32, 10, 0x000000, 0.35);
     this.playerShadow.setOrigin(0.5, 0.5);
     this.playerShadow.setDepth(499);
 
-    // 玩家光环（发光效果）
-    this.playerAura = this.add.circle(0, 20, 38, 0xFFFFFF, 0.15);
+    this.playerAura = this.add.circle(0, 20, 38, 0xFFFFFF, 0.12);
     this.playerAura.setDepth(498);
     this.tweens.add({
       targets: this.playerAura,
-      alpha: { from: 0.08, to: 0.22 },
+      alpha: { from: 0.06, to: 0.18 },
       scale: { from: 0.95, to: 1.08 },
       duration: 2000,
       ease: 'Sine.easeInOut',
@@ -181,9 +124,8 @@ export default class WorldScene extends Phaser.Scene {
       yoyo: true,
     });
 
-    // 玩家名字
-    const names = ['小樱', '小牧', '森林精灵'];
-    this.playerName = this.add.text(0, -50, names[this.characterId - 1], {
+    const nameText = this.characterKey === 'boy' ? '小牧' : '小樱';
+    this.playerName = this.add.text(0, -60, nameText, {
       fontFamily: '"Press Start 2P"',
       fontSize: '10px',
       color: '#FFFFFF',
@@ -194,17 +136,15 @@ export default class WorldScene extends Phaser.Scene {
     this.playerName.setOrigin(0.5);
     this.playerName.setDepth(510);
 
-    // 物理
     this.physics.add.existing(this.player);
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     body.setCollideWorldBounds(false);
     body.setSize(32, 24);
     body.setOffset(0, 36);
 
-    // 呼吸动画
     this.tweens.add({
       targets: this.player,
-      scaleX: 1.42,
+      scaleX: 1.43,
       duration: 1400,
       ease: 'Sine.easeInOut',
       repeat: -1,
@@ -213,36 +153,31 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   createWorldEntities() {
-    const centerX = 0;
-    const centerY = 0;
-
-    // ==== 装饰物：树、樱花树、石头、花、蘑菇 ====
-    for (let i = 0; i < 280; i++) {
+    // 装饰物：树、樱花树、石头、花、蘑菇
+    for (let i = 0; i < 300; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const distance = 120 + Math.random() * 1100;
-      const x = centerX + Math.cos(angle) * distance;
-      const y = centerY + Math.sin(angle) * distance;
+      const distance = 120 + Math.random() * 1200;
+      const x = Math.cos(angle) * distance;
+      const y = Math.sin(angle) * distance;
 
-      if (Math.abs(x - centerX) < 120 && Math.abs(y - centerY) < 100) continue;
+      if (Math.abs(x) < 150 && Math.abs(y) < 120) continue;
 
       const type = Math.random();
 
-      if (type < 0.25) {
+      if (type < 0.22) {
         const shadow = this.add.ellipse(x, y + 8, 36, 10, 0x000000, 0.25);
         shadow.setDepth(Math.floor(y) - 1);
         const tree = this.add.sprite(x, y, 'tree-big');
         tree.setOrigin(0.5, 1);
         tree.setScale(1 + Math.random() * 0.3);
         tree.setDepth(Math.floor(y));
-        this.entities.push(tree, shadow);
-      } else if (type < 0.35) {
+      } else if (type < 0.33) {
         const shadow = this.add.ellipse(x, y + 8, 36, 10, 0x000000, 0.25);
         shadow.setDepth(Math.floor(y) - 1);
         const tree = this.add.sprite(x, y, 'tree-cherry');
         tree.setOrigin(0.5, 1);
         tree.setScale(1 + Math.random() * 0.3);
         tree.setDepth(Math.floor(y));
-        // 樱花树摇摆
         this.tweens.add({
           targets: tree,
           angle: { from: -2, to: 2 },
@@ -251,22 +186,19 @@ export default class WorldScene extends Phaser.Scene {
           repeat: -1,
           yoyo: true,
         });
-        this.entities.push(tree, shadow);
-      } else if (type < 0.5) {
-        const shadow = this.add.ellipse(x, y + 5, 30, 8, 0x000000, 0.25);
+      } else if (type < 0.46) {
+        const shadow = this.add.ellipse(x, y + 5, 28, 8, 0x000000, 0.25);
         shadow.setDepth(Math.floor(y) - 1);
         const rock = this.add.sprite(x, y, 'rock-big');
         rock.setOrigin(0.5, 1);
         rock.setScale(0.8 + Math.random() * 0.5);
         rock.setDepth(Math.floor(y));
-        this.entities.push(rock, shadow);
       } else if (type < 0.7) {
         const flowers = ['flower-pink', 'flower-yellow', 'flower-purple', 'flower-red', 'flower-blue'];
         const flower = this.add.sprite(x, y, flowers[Math.floor(Math.random() * flowers.length)]);
         flower.setOrigin(0.5, 1);
         flower.setScale(1 + Math.random() * 0.3);
         flower.setDepth(Math.floor(y));
-        // 轻微摆动
         this.tweens.add({
           targets: flower,
           angle: { from: -3, to: 3 },
@@ -275,24 +207,22 @@ export default class WorldScene extends Phaser.Scene {
           repeat: -1,
           yoyo: true,
         });
-        this.entities.push(flower);
-      } else if (type < 0.78) {
+      } else if (type < 0.77) {
         const m = this.add.sprite(x, y, 'mushroom');
         m.setOrigin(0.5, 1);
-        m.setScale(1 + Math.random() * 0.3);
+        m.setScale(1 + Math.random() * 0.2);
         m.setDepth(Math.floor(y));
-        this.entities.push(m);
       }
     }
 
-    // ==== 村镇：多栋房屋 + NPC ====
-    const villageStartX = centerX + 220;
-    const villageStartY = centerY - 140;
+    // ==== 村镇建筑 ====
+    const villageStartX = 240;
+    const villageStartY = -180;
 
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 2; j++) {
         const hx = villageStartX + i * 120;
-        const hy = villageStartY + j * 120;
+        const hy = villageStartY + j * 130;
 
         const shadow = this.add.ellipse(hx, hy + 20, 60, 14, 0x000000, 0.25);
         shadow.setDepth(Math.floor(hy) - 1);
@@ -301,11 +231,9 @@ export default class WorldScene extends Phaser.Scene {
         house.setOrigin(0.5, 1);
         house.setScale(1.3);
         house.setDepth(Math.floor(hy));
-        this.entities.push(house, shadow);
       }
     }
 
-    // 村镇名字标签
     const townLabel = this.add.text(villageStartX + 120, villageStartY - 180, '🏡 星光小镇', {
       fontFamily: '"Press Start 2P"',
       fontSize: '14px',
@@ -315,8 +243,7 @@ export default class WorldScene extends Phaser.Scene {
       shadow: { offsetX: 0, offsetY: 0, color: '#FFD700', blur: 8, fill: true },
     });
     townLabel.setOrigin(0.5);
-    townLabel.setDepth(2000);
-    townLabel.setScrollFactor(1);
+    townLabel.setDepth(3000);
     this.tweens.add({
       targets: townLabel,
       y: townLabel.y + 6,
@@ -327,11 +254,10 @@ export default class WorldScene extends Phaser.Scene {
     });
 
     // 井
-    const well = this.add.sprite(villageStartX + 60, villageStartY + 260, 'well');
+    const well = this.add.sprite(villageStartX + 60, villageStartY + 280, 'well');
     well.setOrigin(0.5, 1);
     well.setScale(1.2);
-    well.setDepth(Math.floor(villageStartY + 260));
-    this.entities.push(well);
+    well.setDepth(Math.floor(villageStartY + 280));
 
     // 灯笼
     const lanternPositions = [
@@ -344,8 +270,7 @@ export default class WorldScene extends Phaser.Scene {
       lantern.setOrigin(0.5, 1);
       lantern.setScale(1.2);
       lantern.setDepth(Math.floor(pos.y));
-      // 发光效果
-      const glow = this.add.circle(pos.x, pos.y - 14, 22, 0xFFD700, 0.15);
+      const glow = this.add.circle(pos.x, pos.y - 14, 24, 0xFFD700, 0.18);
       glow.setDepth(Math.floor(pos.y) - 1);
       this.tweens.add({
         targets: glow,
@@ -356,17 +281,15 @@ export default class WorldScene extends Phaser.Scene {
         repeat: -1,
         yoyo: true,
       });
-      this.entities.push(lantern, glow);
     });
 
     // ==== NPC ====
-    const npcInfo = [
+    const npcs = [
       { x: villageStartX + 60, y: villageStartY + 120, name: '老张', npc: 'npc-oldman', text: '今天天气真好！' },
       { x: villageStartX + 200, y: villageStartY + 40, name: '小花', npc: 'npc-girl', text: '欢迎来我们的小镇~' },
       { x: villageStartX + 140, y: villageStartY + 260, name: '牧羊人', npc: 'npc-oldman', text: '要来点新鲜蔬菜吗？' },
     ];
-
-    npcInfo.forEach((info) => {
+    npcs.forEach((info) => {
       const shadow = this.add.ellipse(info.x, info.y + 8, 28, 8, 0x000000, 0.25);
       shadow.setDepth(Math.floor(info.y) - 1);
 
@@ -408,13 +331,11 @@ export default class WorldScene extends Phaser.Scene {
         repeat: -1,
         yoyo: true,
       });
-
-      this.entities.push(shadow, npc, nameTag, hint);
     });
 
-    // ==== 农场：作物田 ====
-    const farmStartX = centerX - 200;
-    const farmStartY = centerY + 100;
+    // ==== 农场 ====
+    const farmStartX = -200;
+    const farmStartY = 100;
 
     const farmLabel = this.add.text(farmStartX, farmStartY - 120, '🌾 新手农场', {
       fontFamily: '"Press Start 2P"',
@@ -425,7 +346,7 @@ export default class WorldScene extends Phaser.Scene {
       shadow: { offsetX: 0, offsetY: 0, color: '#90EE90', blur: 8, fill: true },
     });
     farmLabel.setOrigin(0.5);
-    farmLabel.setDepth(2000);
+    farmLabel.setDepth(3000);
     this.tweens.add({
       targets: farmLabel,
       y: farmLabel.y + 6,
@@ -446,18 +367,16 @@ export default class WorldScene extends Phaser.Scene {
         bg.fillStyle(0x6B5344).fillRect(cx - 24, cy - 44, 48, 4).fillRect(cx - 24, cy - 4, 48, 4);
         bg.fillStyle(0xA08550).fillRect(cx - 22, cy - 42, 4, 36).fillRect(cx + 18, cy - 42, 4, 36);
         bg.setDepth(Math.floor(cy) - 2);
-        this.entities.push(bg);
 
         const stage = (i + j) % 4;
         const crop = this.add.sprite(cx, cy, cropTypes[stage]);
         crop.setOrigin(0.5, 1);
         crop.setScale(1.2);
         crop.setDepth(Math.floor(cy));
-        this.entities.push(crop);
       }
     }
 
-    // 农场围栏
+    // 农场栅栏
     for (let i = -3; i <= 3; i++) {
       const fx = farmStartX + i * 32;
       const fy = farmStartY - 180;
@@ -465,28 +384,25 @@ export default class WorldScene extends Phaser.Scene {
       fence.setOrigin(0.5, 1);
       fence.setScale(1);
       fence.setDepth(Math.floor(fy));
-      this.entities.push(fence);
     }
 
-    // 箱子
+    // 宝箱
     const chest = this.add.sprite(farmStartX + 100, farmStartY + 50, 'chest');
     chest.setOrigin(0.5, 1);
     chest.setScale(1.3);
     chest.setDepth(Math.floor(farmStartY + 50));
-    this.entities.push(chest);
 
-    // ==== 金币散落 ====
+    // ==== 散落金币 ====
     for (let i = 0; i < 10; i++) {
-      const x = (Math.random() - 0.5) * 1200;
+      const x = (Math.random() - 0.5) * 1400;
       const y = (Math.random() - 0.5) * 1200;
       if (Math.abs(x) < 80 && Math.abs(y) < 80) continue;
 
-      const coin = this.add.sprite(x, y, 'coin-0');
+      const coin = this.add.sprite(x, y, 'coin-1');
       coin.setOrigin(0.5, 1);
       coin.setScale(1.2);
       coin.setDepth(Math.floor(y));
 
-      // 金币旋转动画
       this.tweens.add({
         targets: coin,
         y: y - 4,
@@ -496,22 +412,19 @@ export default class WorldScene extends Phaser.Scene {
         yoyo: true,
       });
 
-      // 帧动画
-      let frameIdx = 0;
+      let frameIdx = 1;
       this.time.addEvent({
         delay: 200,
         callback: () => {
-          frameIdx = (frameIdx + 1) % 4;
+          frameIdx = (frameIdx % 4) + 1;
           coin.setTexture(`coin-${frameIdx}`);
         },
         loop: true,
       });
-
-      this.entities.push(coin);
     }
 
-    // ==== 指引牌（起始位置附近） ====
-    const welcomeSign = this.add.text(0, -120, '🌟 开始你的冒险！', {
+    // ==== 起点提示 ====
+    const welcome = this.add.text(0, -120, '🌟 探索你的田园世界！', {
       fontFamily: '"Press Start 2P"',
       fontSize: '14px',
       color: '#FFD700',
@@ -519,116 +432,46 @@ export default class WorldScene extends Phaser.Scene {
       strokeThickness: 4,
       shadow: { offsetX: 0, offsetY: 2, color: '#FFD700', blur: 8, fill: true },
     });
-    welcomeSign.setOrigin(0.5);
-    welcomeSign.setDepth(2000);
+    welcome.setOrigin(0.5);
+    welcome.setDepth(3000);
     this.tweens.add({
-      targets: welcomeSign,
+      targets: welcome,
       y: -128,
-      alpha: { from: 1, to: 0.6 },
+      alpha: { from: 1, to: 0.7 },
       duration: 1800,
       ease: 'Sine.easeInOut',
       repeat: -1,
       yoyo: true,
     });
-    this.entities.push(welcomeSign);
   }
 
-  createParticleSystems() {
-    // 简单的漂浮装饰元素：用普通 sprite 创建漂浮动画
-    for (let i = 0; i < 12; i++) {
-      const x = (Math.random() - 0.5) * 1500;
-      const y = (Math.random() - 0.5) * 1000;
-      const colors = ['flower-pink', 'flower-yellow', 'flower-purple', 'flower-red', 'flower-blue'];
-      const texKey = colors[Math.floor(Math.random() * colors.length)];
-      const sprite = this.add.sprite(x, y, texKey);
-      sprite.setScale(0.6 + Math.random() * 0.4);
-      sprite.setAlpha(0.5 + Math.random() * 0.3);
-      sprite.setDepth(900 + i);
+  createParticleEffects() {
+    // 漂浮的花瓣
+    for (let i = 0; i < 15; i++) {
+      const colors = ['flower-pink', 'flower-yellow', 'flower-purple'];
+      const tex = colors[Math.floor(Math.random() * colors.length)];
+      const x = (Math.random() - 0.5) * 800;
+      const y = -200 - Math.random() * 400;
+      const p = this.add.sprite(x, y, tex);
+      p.setScale(0.5);
+      p.setAlpha(0.8);
+      p.setDepth(1500);
       this.tweens.add({
-        targets: sprite,
-        y: y - 30,
-        x: x + 20,
+        targets: p,
+        y: y + 800,
+        x: x + (Math.random() - 0.5) * 200,
         angle: 360,
-        duration: 4000 + Math.random() * 3000,
+        duration: 6000 + Math.random() * 4000,
         ease: 'Sine.easeInOut',
         repeat: -1,
-        yoyo: true,
       });
     }
-  }
-
-  showTutorialText() {
-    // 左上角操作提示
-    const hint = this.add.text(this.cameras.main.width / 2, 60, '使用 WASD / 方向键 移动', {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '14px',
-      color: '#FFFFFF',
-      stroke: '#000000',
-      strokeThickness: 4,
-      shadow: { offsetX: 0, offsetY: 2, color: '#000000', blur: 6, fill: true },
-    });
-    hint.setOrigin(0.5);
-    hint.setScrollFactor(0);
-    hint.setDepth(3000);
-
-    this.tweens.add({
-      targets: hint,
-      alpha: 0,
-      duration: 2000,
-      delay: 5000,
-      onComplete: () => hint.destroy(),
-    });
-  }
-
-  showRandomDialogue() {
-    const messages = [
-      '🌸 今天的花开得好美啊~',
-      '☀️ 阳光明媚，适合冒险！',
-      '🌾 农场里的作物正在成长',
-      '🏡 小镇的居民都很友好',
-      '✨ 来探索这片神奇的世界吧！',
-    ];
-    const msg = messages[Math.floor(Math.random() * messages.length)];
-
-    const bubble = this.add.text(this.player.x, this.player.y - 120, msg, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '10px',
-      color: '#FFFFFF',
-      backgroundColor: 'rgba(42, 27, 61, 0.95)',
-      stroke: '#FFD700',
-      strokeThickness: 2,
-      padding: { left: 12, right: 12, top: 8, bottom: 8 },
-    });
-    bubble.setOrigin(0.5);
-    bubble.setDepth(3000);
-    bubble.setAlpha(0);
-
-    this.tweens.add({
-      targets: bubble,
-      alpha: 1,
-      y: bubble.y - 10,
-      duration: 500,
-      ease: 'Cubic.Out',
-      onComplete: () => {
-        this.time.delayedCall(3500, () => {
-          this.tweens.add({
-            targets: bubble,
-            alpha: 0,
-            y: bubble.y - 20,
-            duration: 500,
-            ease: 'Cubic.In',
-            onComplete: () => bubble.destroy(),
-          });
-        });
-      },
-    });
   }
 
   update(time: number, delta: number) {
     this.handleMovement(delta);
     this.updatePlayerAnimation(delta);
 
-    // 更新玩家阴影/光环位置
     this.playerShadow.x = this.player.x;
     this.playerShadow.y = this.player.y + 28;
     this.playerShadow.setDepth(Math.floor(this.player.y) - 1);
@@ -637,12 +480,10 @@ export default class WorldScene extends Phaser.Scene {
     this.playerAura.y = this.player.y + 20;
     this.playerAura.setDepth(Math.floor(this.player.y) - 2);
 
-    // 更新玩家名字位置
     this.playerName.x = this.player.x;
-    this.playerName.y = this.player.y - 70;
+    this.playerName.y = this.player.y - 60;
     this.playerName.setDepth(Math.floor(this.player.y) + 100);
 
-    // 玩家深度
     this.player.setDepth(Math.floor(this.player.y) + 50);
   }
 
@@ -671,9 +512,9 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     if (moveX !== 0 && moveY !== 0) {
-      const factor = 0.707;
-      moveX *= factor;
-      moveY *= factor;
+      const f = 0.707;
+      moveX *= f;
+      moveY *= f;
     }
 
     if (moveX !== 0 || moveY !== 0) {
@@ -684,25 +525,19 @@ export default class WorldScene extends Phaser.Scene {
       this.isMoving = false;
     }
 
-    const heroKey = `hero${this.characterId}`;
     if (!this.isMoving) {
-      const textureName = `${heroKey}-${this.currentDirection}`;
-      if (this.player.texture.key !== textureName) {
-        this.player.setTexture(textureName);
-      }
+      this.player.setTexture(`${this.characterKey}-${this.currentDirection}`);
       this.player.setFlipX(false);
     }
   }
 
   updatePlayerAnimation(delta: number) {
-    const heroKey = `hero${this.characterId}`;
     if (this.isMoving) {
       this.animationTimer += delta;
       if (this.animationTimer > 140) {
         this.animationTimer = 0;
         this.animationFrame = (this.animationFrame + 1) % 4;
-        const textureName = `${heroKey}-walk${this.animationFrame + 1}`;
-        this.player.setTexture(textureName);
+        this.player.setTexture(`${this.characterKey}-walk${this.animationFrame + 1}`);
 
         if (this.currentDirection === 'left') {
           this.player.setFlipX(true);

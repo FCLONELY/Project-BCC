@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
-import Game from '@/game/Game';
+import { createGame } from '@/game/Game';
 
 export default function GameCanvas() {
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -8,14 +8,16 @@ export default function GameCanvas() {
 
   useEffect(() => {
     if (containerRef.current && !gameRef.current) {
-      // 初始化 Phaser 游戏
-      gameRef.current = Game;
+      gameRef.current = createGame(containerRef.current);
     }
 
     return () => {
-      // 清理游戏实例
       if (gameRef.current) {
-        gameRef.current.destroy(true);
+        try {
+          gameRef.current.destroy(true);
+        } catch (e) {
+          // ignore
+        }
         gameRef.current = null;
       }
     };
@@ -25,7 +27,13 @@ export default function GameCanvas() {
     <div
       id="game-container"
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center bg-sky-light"
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: '400px',
+        position: 'relative',
+        backgroundColor: '#7EC850',
+      }}
     />
   );
 }

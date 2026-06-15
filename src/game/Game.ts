@@ -2,11 +2,10 @@ import Phaser from 'phaser';
 import BootScene from './scenes/BootScene';
 import WorldScene from './scenes/WorldScene';
 
-const config: Phaser.Types.Core.GameConfig = {
+export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
-  parent: 'game-container',
+  width: 1920,
+  height: 1080,
   backgroundColor: '#87CEEB',
   physics: {
     default: 'arcade',
@@ -16,10 +15,22 @@ const config: Phaser.Types.Core.GameConfig = {
     },
   },
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   scene: [BootScene, WorldScene],
 };
 
-export default new Phaser.Game(config);
+export function createGame(container: HTMLElement): Phaser.Game {
+  // 确保容器有明确尺寸
+  container.style.display = 'block';
+  container.style.width = '100%';
+  container.style.height = '100%';
+  container.style.minHeight = '400px';
+  container.style.overflow = 'hidden';
+
+  return new Phaser.Game({
+    ...gameConfig,
+    parent: container,
+  });
+}
