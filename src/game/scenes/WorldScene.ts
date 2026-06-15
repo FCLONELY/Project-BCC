@@ -538,9 +538,10 @@ export default class WorldScene extends Phaser.Scene {
 
     this.playerName.x = this.player.x;
     this.playerName.y = this.player.y - 60;
-    this.playerName.setDepth(Math.floor(this.player.y) + 100);
+    this.playerName.setDepth(3500);
 
-    this.player.setDepth(Math.floor(this.player.y) + 50);
+    // 确保玩家始终在最上层，不随 y 坐标变化
+    this.player.setDepth(3000);
   }
 
   handleMovement(delta: number) {
