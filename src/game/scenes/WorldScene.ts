@@ -9,12 +9,16 @@ export default class WorldScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key };
   private noise2D!: ReturnType<typeof createNoise2D>;
+  private noise2D2!: ReturnType<typeof createNoise2D>;
+  private noise2D3!: ReturnType<typeof createNoise2D>;
   private playerSpeed: number = 220;
   private isMoving: boolean = false;
   private currentDirection: string = 'down';
   private animationTimer: number = 0;
   private animationFrame: number = 0;
   private characterKey: string = 'girl'; // 'girl' | 'boy'
+  private mapSize: number = 100;
+  private tileSize: number = 32;
 
   constructor() {
     super({ key: 'WorldScene' });
@@ -22,10 +26,16 @@ export default class WorldScene extends Phaser.Scene {
 
   create() {
     this.noise2D = createNoise2D(() => 42);
+    this.noise2D2 = createNoise2D(() => 100);
+    this.noise2D3 = createNoise2D(() => 200);
 
     this.cameras.main.setBackgroundColor('#87CEEB');
     this.cameras.main.setZoom(1.4);
     this.cameras.main.fadeIn(1000, 0, 0, 0);
+
+    // 设置世界边界
+    const worldSize = this.mapSize * this.tileSize;
+    this.physics.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
 
     // 从全局状态读取角色选择
     const savedChar = (window as any).__gameStore?.characterId;
@@ -51,45 +61,102 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   createWorldGround() {
-    const size = 80;
-    const tileSize = 32;
+    const size = this.mapSize;
+    const tileSize = this.tileSize;
     const halfW = (size * tileSize) / 2;
 
     const ground = this.add.graphics();
+    const water = this.add.graphics();
+    const sand = this.add.graphics();
+    const forest = this.add.graphics();
+    const mountain = this.add.graphics();
+    const cave = this.add.graphics();
+    const flowerGfx = this.add.graphics();
 
     for (let ty = 0; ty < size; ty++) {
       for (let tx = 0; tx < size; tx++) {
         const wx = tx - size / 2;
         const wy = ty - size / 2;
-        const elevation = this.noise2D(wx * 0.06, wy * 0.06);
+        
+        // 使用多层噪声创建丰富地形
+        const elevation = this.noise2D(wx * 0.05, wy * 0.05);
+        const moisture = this.noise2D2(wx * 0.08, wy * 0.08);
+        const detail = this.noise2D3(wx * 0.15, wy * 0.15);
+        
         const x = -halfW + tx * tileSize;
         const y = -halfW + ty * tileSize;
 
-        if (elevation < -0.2) {
-          ground.fillStyle(0x4682B4).fillRect(x, y, tileSize, tileSize);
-          ground.fillStyle(0x87CEEB).fillRect(x + 4, y + 10, 10, 2);
+        // 根据噪声值决定地形类型
+        if (elevation < -0.3) {
+          // 深海
+          water.fillStyle(0x1E4D8C).fillRect(x, y, tileSize, tileSize);
+          water.fillStyle(0x2E6AB3).fillRect(x + 6, y + 8, 8, 2);
+          water.fillStyle(0x4A90D9).fillRect(x + 20, y + 16, 6, 1);
+        } else if (elevation < -0.15) {
+          // 浅海/湖泊
+          water.fillStyle(0x4682B4).fillRect(x, y, tileSize, tileSize);
+          water.fillStyle(0x6BA3D6).fillRect(x + 4, y + 10, 10, 2);
+          water.fillStyle(0x87CEEB).fillRect(x + 18, y + 20, 8, 1);
         } else if (elevation < -0.05) {
-          ground.fillStyle(0xE8D498).fillRect(x, y, tileSize, tileSize);
-          if ((tx * 7 + ty * 3) % 5 === 0) {
-            ground.fillStyle(0xD4C088).fillRect(x + 4, y + 6, 3, 2);
+          // 沙滩
+          sand.fillStyle(0xF5DEB3).fillRect(x, y, tileSize, tileSize);
+          sand.fillStyle(0xE8D498).fillRect(x + 4, y + 4, 3, 2);
+          if ((tx * 5 + ty * 7) % 6 === 0) {
+            sand.fillStyle(0xD4C088).fillRect(x + 12, y + 16, 4, 2);
           }
+        } else if (elevation > 0.45) {
+          // 山脉/岩石
+          mountain.fillStyle(0x5a5a5a).fillRect(x, y, tileSize, tileSize);
+          mountain.fillStyle(0x7a7a7a).fillRect(x + 4, y + 4, 6, 6);
+          mountain.fillStyle(0x9a9a9a).fillRect(x + 18, y + 20, 4, 4);
+          mountain.fillStyle(0x4a4a4a).fillRect(x + 24, y + 8, 4, 8);
+        } else if (elevation > 0.35) {
+          // 山地草地
+          mountain.fillStyle(0x5B7B4F).fillRect(x, y, tileSize, tileSize);
+          mountain.fillStyle(0x6B8B5F).fillRect(x + 6, y + 6, 4, 4);
+          mountain.fillStyle(0x4B6B3F).fillRect(x + 20, y + 18, 6, 6);
+        } else if (moisture > 0.35) {
+          // 森林区域
+          forest.fillStyle(0x228B22).fillRect(x, y, tileSize, tileSize);
+          forest.fillStyle(0x32CD32).fillRect(x + 6, y + 6, 4, 4);
+          forest.fillStyle(0x2E8B2E).fillRect(x + 20, y + 16, 4, 4);
+        } else if (moisture < -0.25) {
+          // 荒地/沙漠边缘
+          ground.fillStyle(0xCD853F).fillRect(x, y, tileSize, tileSize);
+          ground.fillStyle(0xBC7A2F).fillRect(x + 8, y + 8, 6, 6);
         } else {
-          // 草地
+          // 普通草地
           ground.fillStyle(0x7EC850).fillRect(x, y, tileSize, tileSize);
-          const hash = (tx * 131 + ty * 53 + Math.floor(elevation * 100)) % 20;
+          const hash = (tx * 131 + ty * 53 + Math.floor(detail * 100)) % 25;
           if (hash === 0) ground.fillStyle(0x8FD14F).fillRect(x + 4, y + 4, 3, 3);
           else if (hash === 1) ground.fillStyle(0x6BB045).fillRect(x + 20, y + 8, 3, 3);
           else if (hash === 2) ground.fillStyle(0x9AD956).fillRect(x + 8, y + 20, 4, 2);
-          else if (hash === 4) ground.fillStyle(0xFFFF99).fillRect(x + 10, y + 6, 2, 2);
+          else if (hash === 3) ground.fillStyle(0xFFFF99).fillRect(x + 10, y + 6, 2, 2);
+          else if (hash === 4) ground.fillStyle(0xFFD700).fillRect(x + 18, y + 18, 2, 2);
+        }
+
+        // 添加小花装饰（只在草地上）
+        if (elevation >= -0.05 && elevation <= 0.35 && moisture > -0.25) {
+          const flowerChance = (tx * 7 + ty * 11 + Math.floor(moisture * 100)) % 35;
+          if (flowerChance === 0) {
+            flowerGfx.fillStyle(0xFF69B4).fillRect(x + 12, y + 14, 3, 3);
+            flowerGfx.fillStyle(0xFFFF99).fillRect(x + 13, y + 15, 1, 1);
+          } else if (flowerChance === 1) {
+            flowerGfx.fillStyle(0xFFD700).fillRect(x + 20, y + 8, 3, 3);
+            flowerGfx.fillStyle(0xFF6347).fillRect(x + 21, y + 9, 1, 1);
+          } else if (flowerChance === 2) {
+            flowerGfx.fillStyle(0x9370DB).fillRect(x + 6, y + 20, 3, 3);
+            flowerGfx.fillStyle(0xFFFFFF).fillRect(x + 7, y + 21, 1, 1);
+          }
         }
       }
     }
 
     // 中心村庄小路
     const pathGfx = this.add.graphics();
-    for (let py = -4; py <= 4; py++) {
-      for (let px = -6; px <= 6; px++) {
-        if (Math.abs(py) + Math.abs(px * 0.5) < 5) {
+    for (let py = -5; py <= 5; py++) {
+      for (let px = -8; px <= 8; px++) {
+        if (Math.abs(py) + Math.abs(px * 0.5) < 6) {
           const x = px * tileSize;
           const y = py * tileSize;
           pathGfx.fillStyle(0xA9A9A9).fillRect(x, y, tileSize, tileSize);
@@ -138,7 +205,7 @@ export default class WorldScene extends Phaser.Scene {
 
     this.physics.add.existing(this.player);
     const body = this.player.body as Phaser.Physics.Arcade.Body;
-    body.setCollideWorldBounds(false);
+    body.setCollideWorldBounds(true);
     body.setSize(32, 24);
     body.setOffset(0, 36);
 
@@ -153,14 +220,17 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   createWorldEntities() {
+    // 创建障碍物碰撞组
+    const obstacles = this.physics.add.staticGroup();
+
     // 装饰物：树、樱花树、石头、花、蘑菇
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 350; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const distance = 120 + Math.random() * 1200;
+      const distance = 120 + Math.random() * 1500;
       const x = Math.cos(angle) * distance;
       const y = Math.sin(angle) * distance;
 
-      if (Math.abs(x) < 150 && Math.abs(y) < 120) continue;
+      if (Math.abs(x) < 180 && Math.abs(y) < 150) continue;
 
       const type = Math.random();
 
@@ -171,6 +241,13 @@ export default class WorldScene extends Phaser.Scene {
         tree.setOrigin(0.5, 1);
         tree.setScale(1 + Math.random() * 0.3);
         tree.setDepth(Math.floor(y));
+        
+        // 添加碰撞体
+        const obstacle = this.physics.add.staticSprite(x, y, '');
+        obstacle.body.setSize(30, 40);
+        obstacle.body.setOffset(-15, -40);
+        obstacle.setVisible(false);
+        obstacles.add(obstacle);
       } else if (type < 0.33) {
         const shadow = this.add.ellipse(x, y + 8, 36, 10, 0x000000, 0.25);
         shadow.setDepth(Math.floor(y) - 1);
@@ -178,6 +255,14 @@ export default class WorldScene extends Phaser.Scene {
         tree.setOrigin(0.5, 1);
         tree.setScale(1 + Math.random() * 0.3);
         tree.setDepth(Math.floor(y));
+        
+        // 添加碰撞体
+        const obstacle = this.physics.add.staticSprite(x, y, '');
+        obstacle.body.setSize(30, 40);
+        obstacle.body.setOffset(-15, -40);
+        obstacle.setVisible(false);
+        obstacles.add(obstacle);
+        
         this.tweens.add({
           targets: tree,
           angle: { from: -2, to: 2 },
@@ -193,6 +278,13 @@ export default class WorldScene extends Phaser.Scene {
         rock.setOrigin(0.5, 1);
         rock.setScale(0.8 + Math.random() * 0.5);
         rock.setDepth(Math.floor(y));
+        
+        // 添加碰撞体
+        const obstacle = this.physics.add.staticSprite(x, y, '');
+        obstacle.body.setSize(24, 20);
+        obstacle.body.setOffset(-12, -20);
+        obstacle.setVisible(false);
+        obstacles.add(obstacle);
       } else if (type < 0.7) {
         const flowers = ['flower-pink', 'flower-yellow', 'flower-purple', 'flower-red', 'flower-blue'];
         const flower = this.add.sprite(x, y, flowers[Math.floor(Math.random() * flowers.length)]);
@@ -212,8 +304,18 @@ export default class WorldScene extends Phaser.Scene {
         m.setOrigin(0.5, 1);
         m.setScale(1 + Math.random() * 0.2);
         m.setDepth(Math.floor(y));
+        
+        // 添加碰撞体（蘑菇较小）
+        const obstacle = this.physics.add.staticSprite(x, y, '');
+        obstacle.body.setSize(16, 16);
+        obstacle.body.setOffset(-8, -16);
+        obstacle.setVisible(false);
+        obstacles.add(obstacle);
       }
     }
+
+    // 设置玩家与障碍物的碰撞
+    this.physics.add.collider(this.player, obstacles);
 
     // ==== 村镇建筑 ====
     const villageStartX = 240;
@@ -231,6 +333,13 @@ export default class WorldScene extends Phaser.Scene {
         house.setOrigin(0.5, 1);
         house.setScale(1.3);
         house.setDepth(Math.floor(hy));
+        
+        // 为房屋添加碰撞体
+        const houseObstacle = this.physics.add.staticSprite(hx, hy, '');
+        houseObstacle.body.setSize(50, 60);
+        houseObstacle.body.setOffset(-25, -60);
+        houseObstacle.setVisible(false);
+        obstacles.add(houseObstacle);
       }
     }
 
