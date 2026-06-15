@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
+import Phaser from 'phaser';
 import Game from '@/game/Game';
 
 export default function GameCanvas() {
-  const gameRef = useRef<Game | null>(null);
+  const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

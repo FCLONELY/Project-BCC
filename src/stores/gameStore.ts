@@ -13,10 +13,12 @@ interface Player {
 interface GameState {
   player: Player;
   isPlaying: boolean;
+  characterId: number;
   setPlayer: (player: Partial<Player>) => void;
   updatePosition: (x: number, y: number) => void;
   updateCoins: (amount: number) => void;
   updateEnergy: (amount: number) => void;
+  setCharacter: (id: number) => void;
   startGame: () => void;
   endGame: () => void;
 }
@@ -24,15 +26,16 @@ interface GameState {
 export const useGameStore = create<GameState>((set) => ({
   player: {
     id: '',
-    name: '农民',
+    name: '小樱',
     x: 0,
     y: 0,
-    coins: 100,
+    coins: 500,
     energy: 100,
     maxEnergy: 100,
   },
 
   isPlaying: false,
+  characterId: 1,
 
   setPlayer: (playerData) =>
     set((state) => ({
@@ -54,6 +57,15 @@ export const useGameStore = create<GameState>((set) => ({
       player: {
         ...state.player,
         energy: Math.max(0, Math.min(state.player.maxEnergy, state.player.energy + amount)),
+      },
+    })),
+
+  setCharacter: (id: number) =>
+    set((state) => ({
+      characterId: id,
+      player: {
+        ...state.player,
+        name: ['小樱', '小牧', '森林精灵'][id - 1] || state.player.name,
       },
     })),
 
