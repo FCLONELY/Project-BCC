@@ -86,46 +86,46 @@ export default class WorldScene extends Phaser.Scene {
         const x = -halfW + tx * tileSize;
         const y = -halfW + ty * tileSize;
 
-        // 根据噪声值决定地形类型
-        if (elevation < -0.3) {
-          // 深海
+        // 根据噪声值决定地形类型（调整阈值减少水域）
+        if (elevation < -0.45) {
+          // 深海（大幅减少）
           water.fillStyle(0x1E4D8C).fillRect(x, y, tileSize, tileSize);
           water.fillStyle(0x2E6AB3).fillRect(x + 6, y + 8, 8, 2);
           water.fillStyle(0x4A90D9).fillRect(x + 20, y + 16, 6, 1);
-        } else if (elevation < -0.15) {
-          // 浅海/湖泊
+        } else if (elevation < -0.35) {
+          // 浅海/湖泊（减少）
           water.fillStyle(0x4682B4).fillRect(x, y, tileSize, tileSize);
           water.fillStyle(0x6BA3D6).fillRect(x + 4, y + 10, 10, 2);
           water.fillStyle(0x87CEEB).fillRect(x + 18, y + 20, 8, 1);
-        } else if (elevation < -0.05) {
+        } else if (elevation < -0.25) {
           // 沙滩
           sand.fillStyle(0xF5DEB3).fillRect(x, y, tileSize, tileSize);
           sand.fillStyle(0xE8D498).fillRect(x + 4, y + 4, 3, 2);
           if ((tx * 5 + ty * 7) % 6 === 0) {
             sand.fillStyle(0xD4C088).fillRect(x + 12, y + 16, 4, 2);
           }
-        } else if (elevation > 0.45) {
+        } else if (elevation > 0.5) {
           // 山脉/岩石
           mountain.fillStyle(0x5a5a5a).fillRect(x, y, tileSize, tileSize);
           mountain.fillStyle(0x7a7a7a).fillRect(x + 4, y + 4, 6, 6);
           mountain.fillStyle(0x9a9a9a).fillRect(x + 18, y + 20, 4, 4);
           mountain.fillStyle(0x4a4a4a).fillRect(x + 24, y + 8, 4, 8);
-        } else if (elevation > 0.35) {
+        } else if (elevation > 0.38) {
           // 山地草地
           mountain.fillStyle(0x5B7B4F).fillRect(x, y, tileSize, tileSize);
           mountain.fillStyle(0x6B8B5F).fillRect(x + 6, y + 6, 4, 4);
           mountain.fillStyle(0x4B6B3F).fillRect(x + 20, y + 18, 6, 6);
-        } else if (moisture > 0.35) {
+        } else if (moisture > 0.4) {
           // 森林区域
           forest.fillStyle(0x228B22).fillRect(x, y, tileSize, tileSize);
           forest.fillStyle(0x32CD32).fillRect(x + 6, y + 6, 4, 4);
           forest.fillStyle(0x2E8B2E).fillRect(x + 20, y + 16, 4, 4);
-        } else if (moisture < -0.25) {
+        } else if (moisture < -0.35) {
           // 荒地/沙漠边缘
           ground.fillStyle(0xCD853F).fillRect(x, y, tileSize, tileSize);
           ground.fillStyle(0xBC7A2F).fillRect(x + 8, y + 8, 6, 6);
         } else {
-          // 普通草地
+          // 普通草地（扩大范围）
           ground.fillStyle(0x7EC850).fillRect(x, y, tileSize, tileSize);
           const hash = (tx * 131 + ty * 53 + Math.floor(detail * 100)) % 25;
           if (hash === 0) ground.fillStyle(0x8FD14F).fillRect(x + 4, y + 4, 3, 3);
@@ -136,7 +136,7 @@ export default class WorldScene extends Phaser.Scene {
         }
 
         // 添加小花装饰（只在草地上）
-        if (elevation >= -0.05 && elevation <= 0.35 && moisture > -0.25) {
+        if (elevation >= -0.25 && elevation <= 0.38 && moisture > -0.35) {
           const flowerChance = (tx * 7 + ty * 11 + Math.floor(moisture * 100)) % 35;
           if (flowerChance === 0) {
             flowerGfx.fillStyle(0xFF69B4).fillRect(x + 12, y + 14, 3, 3);
