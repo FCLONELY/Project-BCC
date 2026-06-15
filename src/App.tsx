@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import GameCanvas from '@/components/ui/GameCanvas';
+import { InventoryPanel } from '@/components/ui/InventoryPanel';
+import { ShopPanel } from '@/components/ui/ShopPanel';
 import { useGameStore } from '@/stores/gameStore';
 
 export default function Game() {
@@ -7,6 +9,7 @@ export default function Game() {
   const [showInventory, setShowInventory] = useState(false);
   const [showCharSelect, setShowCharSelect] = useState(false);
   const [showQuest, setShowQuest] = useState(false);
+  const [showShop, setShowShop] = useState(false);
 
   const skillCooldowns = [0, 0, 0, 0];
   const skillItems = [
@@ -270,6 +273,7 @@ export default function Game() {
         }}>
           {[
             { icon: '🎒', label: '背包', action: () => setShowInventory(true) },
+            { icon: '🏪', label: '商店', action: () => setShowShop(true) },
             { icon: '📖', label: '图鉴', action: () => setShowQuest(true) },
             { icon: '🏠', label: '家园', action: () => {} },
             { icon: '💬', label: '聊天', action: () => {} },
@@ -745,125 +749,11 @@ export default function Game() {
         </div>
       )}
 
-      {/* ===== 背包弹窗 ===== */}
-      {showInventory && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-        }} onClick={() => setShowInventory(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{
-            width: '460px',
-            background: 'linear-gradient(135deg, rgba(42, 27, 61, 0.98), rgba(30, 20, 45, 0.96))',
-            border: '3px solid rgba(255, 215, 0, 0.5)',
-            borderRadius: '16px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              padding: '14px 20px',
-              background: 'linear-gradient(90deg, rgba(147,51,234,0.3), transparent)',
-              borderBottom: '2px solid rgba(255,215,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '18px' }}>🎒</span>
-                <span style={{ fontFamily: '"Press Start 2P"', fontSize: '12px', color: '#FFD700' }}>背包</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontFamily: '"Press Start 2P"', fontSize: '9px', color: '#FFD70080' }}>24/50</span>
-                <button onClick={() => setShowInventory(false)} style={{
-                  width: '30px', height: '30px',
-                  background: 'rgba(239,68,68,0.3)',
-                  border: '1px solid rgba(239,68,68,0.4)',
-                  borderRadius: '8px',
-                  color: '#FFD700',
-                  cursor: 'pointer',
-                }}>✕</button>
-              </div>
-            </div>
-            <div style={{ padding: '16px 20px' }}>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(8, 1fr)',
-                gap: '8px',
-              }}>
-                {Array.from({ length: 32 }).map((_, i) => {
-                  const items = ['🌰', '🥕', '🌾', '🪵', '🪨', '🌿', '🍎', '🥚', '🍞', '🧀', '🪙', '💎'];
-                  const hasItem = i < 24;
-                  const item = items[i % items.length];
-                  return (
-                    <div key={i} style={{
-                      aspectRatio: '1',
-                      background: hasItem ? 'linear-gradient(135deg, rgba(138,43,226,0.35), rgba(75,0,130,0.25))' : 'rgba(30,30,50,0.55)',
-                      border: `2px solid ${hasItem ? 'rgba(255,215,0,0.4)' : 'rgba(100,100,130,0.3)'}`,
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
-                      cursor: hasItem ? 'pointer' : 'default',
-                      transition: 'all 0.15s',
-                    }}>
-                      {hasItem && (
-                        <>
-                          <span style={{ fontSize: '18px' }}>{item}</span>
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '2px',
-                            right: '4px',
-                            fontFamily: '"Press Start 2P"',
-                            fontSize: '8px',
-                            color: '#FFD700',
-                            textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
-                          }}>{(i + 1) * 3}</div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={{
-              padding: '12px 20px',
-              background: 'rgba(0,0,0,0.25)',
-              borderTop: '2px solid rgba(255,215,0,0.2)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '12px',
-            }}>
-              <div style={{
-                padding: '8px 16px',
-                background: 'rgba(239,68,68,0.25)',
-                border: '1px solid rgba(239,68,68,0.4)',
-                borderRadius: '8px',
-                fontFamily: '"Press Start 2P"',
-                fontSize: '9px',
-                color: '#fca5a5',
-                cursor: 'pointer',
-              }}>🗑 整理</div>
-              <button onClick={() => setShowInventory(false)} style={{
-                padding: '8px 20px',
-                background: 'linear-gradient(135deg, rgba(255,215,0,0.35), rgba(255,165,0,0.25))',
-                border: '1.5px solid rgba(255,215,0,0.5)',
-                borderRadius: '8px',
-                color: '#FFD700',
-                fontFamily: '"Press Start 2P"',
-                fontSize: '10px',
-                cursor: 'pointer',
-              }}>关闭 ✕</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ===== 背包面板 ===== */}
+      <InventoryPanel visible={showInventory} onClose={() => setShowInventory(false)} />
+
+      {/* ===== 商店面板 ===== */}
+      <ShopPanel visible={showShop} onClose={() => setShowShop(false)} />
 
       {/* 全局动画样式 */}
       <style>{`
